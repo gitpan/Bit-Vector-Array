@@ -22,46 +22,26 @@ sub STORESIZE
 	my ($obj,$value)=@_;
 	$value=int($value);
 
-	# if assigned using @arr=42; (last caller is STORE)
-	# then do NOT need to subtract one.
-	# but if assigned using $#arr=42, 
-	# then need to subtract 1.
-	my @caller= caller(1);
-	my $callingsub = $caller[3];
-	if(scalar(@caller) and ($callingsub=~m{STORE}))
-		{}
-	else
-		{
-		$value--;
-		}
-	$obj->{Value}=$value;
+	#warn "STORESIZE, $value";
+
+	$obj->{Value}=$value-1;
 }
 
 sub FETCHSIZE
 {
 	my ($obj)=@_;
 	my $value = $obj->{Value};
-	return $value;
+	#warn "FETCHSIZE, $value";
+	return $value+1;
 }
 
 sub STORE
 {
 	my($obj,$bit_index,$bit_value)=@_;
-	# warn "STORE, $bit_index,$bit_value";
+	#warn "STORE, $bit_index,$bit_value";
+
 	#################################################
-	# if the user says
-	# 	@arr = 42;
-	# then this will attempt to store to index zero.
-	# if a store to index zero occurs, treat it as 
-	# setting the value of the entire array.
-	#################################################
-	if($bit_index==0)
-		{
-		$obj->STORESIZE($bit_value);
-		}
-	else
-	#################################################
-	# else if user says
+	# if user says
 	#	$arr[1]=1;
 	# then set bit 1 (lsb) to a '1'
 	# if user says
@@ -74,8 +54,10 @@ sub STORE
 		my $bin_str = sprintf("%lb",$obj->{Value});
 		my $padding='0'x($bit_index-length($bin_str));
 		$bin_str = '00'.$padding.$bin_str;
-		my $substr_offset = -1 * ($bit_index+1);
+		my $substr_offset = -1 * ($bit_index+2);
+#warn $bin_str;
 		substr($bin_str,$substr_offset,1)=$bit_value;
+#warn $bin_str;
 		my $dec_val = oct('0b'.$bin_str);
 		$obj->{Value}=$dec_val;
 		}
@@ -110,32 +92,16 @@ use strict;
 use warnings;
 
 require Exporter;
-use AutoLoader qw(AUTOLOAD);
+
 
 our @ISA = qw(Exporter);
 
 # Items to export into callers namespace by default. 
-# Note: do not export names by default without a very 
-# good reason. Use EXPORT_OK instead.
-# Do not simply export all your public 
-# functions/methods/constants.
-
-# This allows declaration	
-# 	use Bit::Vector::Array ':all';
-# If you do not need this, moving things directly 
-# into @EXPORT or @EXPORT_OK
-# will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(
-	bva
-) ] );
-
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
-
 our @EXPORT = qw(
-	
+	bva
 );
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub bva(\@)
 {
